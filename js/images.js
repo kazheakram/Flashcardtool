@@ -88,7 +88,7 @@
     return (await fetch(d)).blob();
   }
 
-  /** { id: dataURL } for the given ids (for backups, sync). */
+  /** { id: dataURL } for the given ids (for backups). */
   async function exportMap(ids) {
     const out = {};
     for (const key of new Set(ids)) {

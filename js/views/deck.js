@@ -66,7 +66,6 @@
               <button data-act="export-json">Export (JSON with progress & images)</button>
               <button data-act="export-txt">Export text (Quizlet / Anki)</button>
               <button data-act="import">Import more cards</button>
-              <button data-act="generate">Generate more cards with AI</button>
               <button data-act="reset">Reset progress</button>
               <button data-act="delete" class="danger">Delete deck</button>
             </div>
@@ -163,7 +162,7 @@
             </div>`;
             })
             .join('')
-        : `<p class="muted center pad">${deck.cards.length ? 'No matching cards.' : `This deck is empty. <a href="#/deck/${deck.id}/edit">Add cards</a>, <a href="#/import?deck=${deck.id}">import</a> or <a href="#/import?tab=ai&deck=${deck.id}">generate them with AI</a>.`}</p>`;
+        : `<p class="muted center pad">${deck.cards.length ? 'No matching cards.' : `This deck is empty. <a href="#/deck/${deck.id}/edit">Add cards</a> or <a href="#/import?deck=${deck.id}">import</a>.`}</p>`;
       Images.hydrate(el);
       $$('[data-star]').forEach((b) => {
         b.onclick = () => {
@@ -229,7 +228,6 @@
         download(slug(deck.name) + '.txt', rows.map((r) => [r.front, r.back, r.tags].map((f) => f.replace(/[\t\n]/g, ' ')).join('\t')).join('\n'), 'text/plain');
       }
       if (act === 'import') go('#/import?deck=' + deck.id);
-      if (act === 'generate') go('#/import?tab=ai&deck=' + deck.id);
       if (act === 'reset' && confirm('Reset spaced-repetition progress for every card in this deck?')) {
         deck.cards.forEach((c) => Object.assign(c, { srs: SRS.newSrs(), updated: Date.now() }));
         deck.daily = null;

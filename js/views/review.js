@@ -350,7 +350,6 @@
         </div>`);
       const u = $('#undo');
       if (u) u.onclick = undo;
-      Sync.schedule();
     }
 
     setKeys((e) => {

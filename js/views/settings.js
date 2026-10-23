@@ -1,4 +1,4 @@
-/* Settings: scheduling, goal & reminders, sync, AI key, install, backup. */
+/* Settings: scheduling, goal & reminders, install, backup. */
 (function () {
   const { esc, $, render, go, toast, download } = UI;
 
@@ -32,10 +32,7 @@
   }
 
   Views.settings = function () {
-    const s = Store.state.settings; // for display; re-read on save in case a sync replaced it
-    const sec = Store.secrets();
-    const syncOn = Sync.enabled();
-    const st = Sync.status;
+    const s = Store.state.settings;
     const notifSupported = 'Notification' in window;
 
     render(`
@@ -78,22 +75,6 @@
         <button class="btn btn-primary" id="save">Save settings</button>
       </div>
 
-      <div class="panel narrow" id="sync-panel">
-        <h2 class="section-title">☁️ Cloud sync</h2>
-        ${
-          syncOn
-            ? `<p>Syncing through a private GitHub Gist. <span class="sync-state s-${st.state}">${st.state === 'error' ? '⚠ ' + esc(st.message) : st.at ? 'Last synced ' + new Date(st.at).toLocaleTimeString() : 'Ready'}</span></p>
-               <p class="muted small">Connect the same token on your other devices to keep them in step. Sync runs when you open the app, after study sessions and when you leave the page.</p>
-               <div class="row"><button class="btn btn-primary" id="sync-now">Sync now</button><a class="btn" href="https://gist.github.com/${esc(sec.gistId || '')}" target="_blank" rel="noopener">View gist</a><button class="btn btn-danger" id="sync-off">Disconnect</button></div>`
-            : `<p class="muted small">Keep decks and progress on your phone and laptop. Recall stores a copy in a <b>private GitHub Gist</b> on your account — no other server involved.</p>
-               <ol class="small steps">
-                 <li><a href="https://github.com/settings/tokens/new?scopes=gist&description=Recall%20flashcards" target="_blank" rel="noopener">Create a GitHub token</a> with only the <b>gist</b> permission (choose "No expiration" or set a reminder to renew it).</li>
-                 <li>Paste it below and connect. Do the same on each device.</li>
-               </ol>
-               <div class="row"><input class="input" id="gh-token" type="password" autocomplete="off" placeholder="ghp_…"><button class="btn btn-primary" id="sync-connect">Connect</button></div>`
-        }
-      </div>
-
       <div class="panel narrow">
         <h2 class="section-title">📲 Install & offline</h2>
         <p class="muted small">Install Recall as an app to study offline and launch it from your home screen.</p>
@@ -104,14 +85,8 @@
       </div>
 
       <div class="panel narrow">
-        <h2 class="section-title">✨ AI card generation</h2>
-        <p class="muted small">Uses your own Anthropic API key, sent only to api.anthropic.com and stored only in this browser.</p>
-        <div class="row"><input class="input" id="ai-key" type="password" autocomplete="off" placeholder="sk-ant-…" value="${esc(sec.anthropicKey || '')}"><button class="btn" id="ai-key-save">Save key</button></div>
-      </div>
-
-      <div class="panel narrow">
         <h2 class="section-title">Backup</h2>
-        <p class="muted small">Everything is stored in this browser. Export a backup (includes images and progress) to keep a copy or move to a device without sync.</p>
+        <p class="muted small">Everything is stored in this browser. Export a backup (includes images and progress) to keep a copy or move your decks to another device.</p>
         <div class="row">
           <button class="btn" id="export">Export all decks</button>
           <a class="btn" href="#/import">Restore from backup</a>
@@ -149,7 +124,7 @@
       const rs = steps($('#relearningSteps').value);
       if (!ls || !rs) return toast('Steps need at least one number of minutes');
       const int = (id, min, dflt) => Math.max(min, parseInt($(id).value, 10) || dflt);
-      Object.assign(Store.state.settings, {
+      Object.assign(s, {
         algorithm: $('#algorithm').value,
         desiredRetention: +$('#desiredRetention').value,
         newPerDay: int('#newPerDay', 0, 0),
@@ -163,48 +138,10 @@
         reminderTime: $('#reminderTime').value || '18:00',
         theme: $('#theme').value,
       });
-      Store.state.settingsUpdated = Date.now();
       Store.save();
       App.applyTheme();
-      Sync.schedule(500);
       toast('Settings saved');
     };
-
-    const connectBtn = $('#sync-connect');
-    if (connectBtn)
-      connectBtn.onclick = async () => {
-        const t = $('#gh-token').value.trim();
-        if (!t) return toast('Paste a GitHub token first');
-        connectBtn.disabled = true;
-        connectBtn.textContent = 'Connecting…';
-        try {
-          await Sync.connect(t);
-          toast('Sync connected');
-        } catch (e) {
-          toast(e.message, 5000);
-        }
-        Views.settings();
-      };
-    const now = $('#sync-now');
-    if (now)
-      now.onclick = async () => {
-        now.disabled = true;
-        now.textContent = 'Syncing…';
-        try {
-          await Sync.syncNow();
-          toast('Synced');
-        } catch (e) {
-          toast(e.message, 5000);
-        }
-        Views.settings();
-      };
-    const off = $('#sync-off');
-    if (off)
-      off.onclick = () => {
-        if (!confirm('Stop syncing on this device? Your data stays here and in the gist.')) return;
-        Sync.disconnect();
-        Views.settings();
-      };
 
     const install = $('#install');
     install.onclick = async () => {
@@ -214,11 +151,6 @@
       await p.userChoice.catch(() => null);
       window.__installPrompt = null;
       install.hidden = true;
-    };
-
-    $('#ai-key-save').onclick = () => {
-      Store.setSecret('anthropicKey', $('#ai-key').value.trim());
-      toast($('#ai-key').value.trim() ? 'API key saved in this browser' : 'API key removed');
     };
 
     $('#export').onclick = async () => download('recall-backup-' + Store.todayKey() + '.json', await Store.exportJson());

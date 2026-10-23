@@ -89,31 +89,17 @@
   // ---------- start ----------
 
   window.App = { applyTheme, render };
-  window.addEventListener('hashchange', () => {
-    render();
-    if (!STUDY.includes(document.body.dataset.route)) Sync.schedule(2000);
-  });
+  window.addEventListener('hashchange', render);
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     window.__installPrompt = e;
   });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) return Sync.schedule(0);
+    if (document.hidden) return;
     checkReminder();
     const r = document.body.dataset.route;
     if (r === 'home' || r === 'deck') render(); // refresh due counts
-    Sync.schedule(500);
   });
-  Sync.onStatus((st) => {
-    const dot = document.getElementById('sync-dot');
-    dot.hidden = false;
-    dot.className = 'sync-dot s-' + st.state;
-    dot.title = st.state === 'error' ? 'Sync problem: ' + st.message : st.state === 'syncing' ? 'Syncing…' : st.state === 'off' ? '' : 'Synced';
-    if (st.state === 'off') dot.hidden = true;
-    // Re-draw pages that show synced data once fresh data lands.
-    if (st.state === 'ok' && ['home', 'deck', 'stats'].includes(document.body.dataset.route)) render();
-  });
-
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     navigator.serviceWorker.register('sw.js').catch((e) => console.warn('Service worker not registered', e));
   }
@@ -122,5 +108,4 @@
   render();
   setInterval(checkReminder, 60 * 1000);
   setTimeout(checkReminder, 3000);
-  if (Sync.enabled()) Sync.syncNow().catch(() => {});
 })();

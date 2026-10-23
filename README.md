@@ -37,16 +37,14 @@ A Quizlet / RevisionDojo-style flashcard app that runs entirely in your browser.
 - **Import:**
   - Quizlet export text, CSV/TSV (an optional third column becomes tags), Anki plain-text exports (cloze notes kept), or a JSON backup (images and progress kept).
   - Custom separators, with a live preview.
-- **AI generation.** Paste notes or attach a PDF or image, and Claude writes cards (Q&A, cloze or exam-style with mark schemes). You review and remove cards before importing. It uses your own Anthropic API key, which is stored only in your browser.
 
-### Sharing and syncing
+### Sharing and offline use
 - **Share links.** A whole deck is compressed into the URL, so no server is needed. The person who opens it gets a copy, without your progress.
-- **Cloud sync through a private GitHub Gist.** Paste a GitHub token with only the `gist` permission on each device. Newer edits win and deletions carry across.
 - **Installable app (PWA)** that works offline.
 
 ## Run it
 
-Serve the folder with any static web server. The installable app, offline mode and AI need `http(s)://`, not `file://`.
+Serve the folder with any static web server. The installable app and offline mode need `http(s)://`, not `file://`.
 
 ```sh
 npm start        # python3 -m http.server 8080 → http://localhost:8080
@@ -54,7 +52,7 @@ npm start        # python3 -m http.server 8080 → http://localhost:8080
 
 To host it for free, enable **GitHub Pages** (Settings → Pages → deploy from branch, root folder).
 
-Your data lives in the browser: decks in `localStorage`, images in IndexedDB. Use cloud sync or **Settings → Export all decks** to keep a copy.
+Your data lives in the browser: decks in `localStorage`, images in IndexedDB. Use **Settings → Export all decks** to keep a copy or move your decks to another device.
 
 ## Keyboard shortcuts
 
@@ -79,12 +77,12 @@ css/styles.css                            styles (light/dark)
 js/srs.js        FSRS + SM-2 schedulers, exam-date capping
 js/rich.js       formatting, maths, images, cloze, mark-scheme parsing
 js/importer.js   Quizlet / CSV / Anki / JSON parsers
-js/store.js      persistence, cloze expansion, folders/tags, sync merge
+js/store.js      persistence, cloze expansion, folders/tags
 js/images.js     image storage (IndexedDB)
 js/ui.js         shared helpers, answer checking
-js/share.js      share links      js/sync.js   Gist sync      js/ai.js   Claude card generation
+js/share.js      share links
 js/views/*.js    one file per screen
-vendor/          KaTeX and the Anthropic SDK (see vendor/README.md)
+vendor/          KaTeX (see vendor/README.md)
 tests/           node:test unit tests
 ```
 

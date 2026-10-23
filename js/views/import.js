@@ -1,4 +1,4 @@
-/* Import: paste text, drop a file, or generate cards from notes with AI. */
+/* Import: paste text or drop a file. */
 (function () {
   const { esc, $, $$, plural, render, go, toast } = UI;
   const TERM_SEPS = { tab: '\t', comma: ',', dash: ' - ', colon: ':' };
@@ -7,91 +7,55 @@
   Views.import = function (params) {
     const decks = Store.state.decks;
     const targetDeck = params.get('deck');
-    let tab = params.get('tab') === 'ai' ? 'ai' : 'paste';
     let text = '';
     let fmt = { format: 'auto' };
     let parsed = null;
     let error = '';
     let fileName = '';
-    let aiFile = null; // { name, type, data (base64) | text }
-    let aiBusy = false;
 
     render(`
       <nav class="crumbs"><a href="#/">Decks</a> / <span>Import</span></nav>
-      <h1>Add cards</h1>
-      <div class="tabs" role="tablist">
-        <button class="tab" role="tab" data-tab="paste">📋 Paste or upload</button>
-        <button class="tab" role="tab" data-tab="ai">✨ Generate with AI</button>
-      </div>
+      <h1>Import flashcards</h1>
       <div class="import-grid">
         <div class="panel">
-          <div id="pane-paste">
-            <div class="dropzone" id="drop">
-              <input type="file" id="file" accept=".txt,.csv,.tsv,.json,text/plain,text/csv,application/json" hidden>
-              <p><b>Drop a file here</b> or <button class="link" id="browse">browse</button></p>
-              <p class="muted small">CSV, TSV, TXT (Quizlet / Anki export) or JSON backup</p>
-              <p class="small" id="fname"></p>
-            </div>
-            <p class="or"><span>or paste your cards</span></p>
-            <textarea class="input mono" id="paste" rows="10" placeholder="Word 1&#9;Definition 1&#10;Word 2&#9;Definition 2&#10;Word 3&#9;Definition 3"></textarea>
+          <div class="dropzone" id="drop">
+            <input type="file" id="file" accept=".txt,.csv,.tsv,.json,text/plain,text/csv,application/json" hidden>
+            <p><b>Drop a file here</b> or <button class="link" id="browse">browse</button></p>
+            <p class="muted small">CSV, TSV, TXT (Quizlet / Anki export) or JSON backup</p>
+            <p class="small" id="fname"></p>
+          </div>
+          <p class="or"><span>or paste your cards</span></p>
+          <textarea class="input mono" id="paste" rows="10" placeholder="Word 1&#9;Definition 1&#10;Word 2&#9;Definition 2&#10;Word 3&#9;Definition 3"></textarea>
 
-            <div class="sep-grid">
-              <fieldset>
-                <legend>Between term and definition</legend>
-                <label class="check"><input type="radio" name="ts" value="auto" checked> Auto-detect</label>
-                <label class="check"><input type="radio" name="ts" value="tab"> Tab</label>
-                <label class="check"><input type="radio" name="ts" value="comma"> Comma</label>
-                <label class="check"><input type="radio" name="ts" value="dash"> Dash ( - )</label>
-                <label class="check"><input type="radio" name="ts" value="colon"> Colon</label>
-                <label class="check"><input type="radio" name="ts" value="custom"> Custom <input class="input input-sm" id="ts-custom" placeholder="e.g. =" size="4"></label>
-              </fieldset>
-              <fieldset>
-                <legend>Between cards</legend>
-                <label class="check"><input type="radio" name="cs" value="nl" checked> New line</label>
-                <label class="check"><input type="radio" name="cs" value="semi"> Semicolon</label>
-                <label class="check"><input type="radio" name="cs" value="blank"> Blank line</label>
-                <label class="check"><input type="radio" name="cs" value="custom"> Custom <input class="input input-sm" id="cs-custom" placeholder="e.g. |" size="4"></label>
-              </fieldset>
-            </div>
-
-            <details class="help">
-              <summary>How to export from Quizlet, Anki, RevisionDojo or a spreadsheet</summary>
-              <ul>
-                <li><b>Quizlet:</b> open the set → <i>⋯</i> menu → <i>Export</i> → <i>Copy text</i>, then paste here. The default (Tab / New line) works as is.</li>
-                <li><b>Anki:</b> <i>File → Export</i> → "Notes in Plain Text (.txt)", then drop the file here. Cloze notes are kept as cloze cards and a tags column is imported.</li>
-                <li><b>RevisionDojo / other apps:</b> copy your cards as text (one card per line, term and definition separated by a tab, comma or dash) and paste them here.</li>
-                <li><b>Google Sheets / Excel:</b> terms in column A, definitions in column B, optional tags in column C. Copy the cells and paste, or download as CSV.</li>
-                <li>Fields containing commas or line breaks can be wrapped in "double quotes". Formatting, $maths$ and {{cloze}} syntax all work in imported text.</li>
-              </ul>
-            </details>
+          <div class="sep-grid">
+            <fieldset>
+              <legend>Between term and definition</legend>
+              <label class="check"><input type="radio" name="ts" value="auto" checked> Auto-detect</label>
+              <label class="check"><input type="radio" name="ts" value="tab"> Tab</label>
+              <label class="check"><input type="radio" name="ts" value="comma"> Comma</label>
+              <label class="check"><input type="radio" name="ts" value="dash"> Dash ( - )</label>
+              <label class="check"><input type="radio" name="ts" value="colon"> Colon</label>
+              <label class="check"><input type="radio" name="ts" value="custom"> Custom <input class="input input-sm" id="ts-custom" placeholder="e.g. =" size="4"></label>
+            </fieldset>
+            <fieldset>
+              <legend>Between cards</legend>
+              <label class="check"><input type="radio" name="cs" value="nl" checked> New line</label>
+              <label class="check"><input type="radio" name="cs" value="semi"> Semicolon</label>
+              <label class="check"><input type="radio" name="cs" value="blank"> Blank line</label>
+              <label class="check"><input type="radio" name="cs" value="custom"> Custom <input class="input input-sm" id="cs-custom" placeholder="e.g. |" size="4"></label>
+            </fieldset>
           </div>
 
-          <div id="pane-ai">
-            <p class="muted small">Paste notes or upload a PDF, image or text file, and Claude writes active-recall flashcards from it. You review every card before anything is added.</p>
-            <textarea class="input" id="ai-text" rows="9" placeholder="Paste your class notes, a textbook section, a syllabus extract…"></textarea>
-            <div class="dropzone small-drop" id="ai-drop">
-              <input type="file" id="ai-file" accept=".pdf,.txt,.md,image/png,image/jpeg,image/webp,image/gif" hidden>
-              <p><button class="link" id="ai-browse">Attach a PDF, image or text file</button> <span class="muted small">(optional, up to 30 MB)</span></p>
-              <p class="small" id="ai-fname"></p>
-            </div>
-            <div class="ai-opts">
-              <label class="field"><select class="input" id="ai-count">
-                ${[10, 20, 30, 50].map((n) => `<option value="${n}" ${n === 20 ? 'selected' : ''}>About ${n} cards</option>`).join('')}
-                <option value="0">As many as the material needs</option>
-              </select><span>How many</span></label>
-              <label class="field"><select class="input" id="ai-style">
-                <option value="mixed">Mixed (Q&A + cloze)</option>
-                <option value="qa">Question → answer</option>
-                <option value="terms">Term → definition</option>
-                <option value="cloze">Cloze (fill in the blank)</option>
-                <option value="exam">Exam-style with mark schemes</option>
-              </select><span>Card style</span></label>
-            </div>
-            <label class="field"><input class="input" id="ai-extra" placeholder="e.g. IB Biology HL, focus on definitions, use British spelling"><span>Extra instructions (optional)</span></label>
-            <label class="field"><input class="input" id="ai-key" type="password" autocomplete="off" placeholder="sk-ant-…" value="${esc(Store.secrets().anthropicKey || '')}"><span>Anthropic API key — stored only in this browser. Get one at console.anthropic.com</span></label>
-            <button class="btn btn-primary btn-block" id="ai-go">✨ Generate cards</button>
-            <p class="small" id="ai-status" aria-live="polite"></p>
-          </div>
+          <details class="help">
+            <summary>How to export from Quizlet, Anki, RevisionDojo or a spreadsheet</summary>
+            <ul>
+              <li><b>Quizlet:</b> open the set → <i>⋯</i> menu → <i>Export</i> → <i>Copy text</i>, then paste here. The default (Tab / New line) works as is.</li>
+              <li><b>Anki:</b> <i>File → Export</i> → "Notes in Plain Text (.txt)", then drop the file here. Cloze notes are kept as cloze cards and a tags column is imported.</li>
+              <li><b>RevisionDojo / other apps:</b> copy your cards as text (one card per line, term and definition separated by a tab, comma or dash) and paste them here.</li>
+              <li><b>Google Sheets / Excel:</b> terms in column A, definitions in column B, optional tags in column C. Copy the cells and paste, or download as CSV.</li>
+              <li>Fields containing commas or line breaks can be wrapped in "double quotes". Formatting, $maths$ and {{cloze}} syntax all work in imported text.</li>
+            </ul>
+          </details>
         </div>
 
         <div class="panel">
@@ -115,16 +79,6 @@
           </div>
         </div>
       </div>`);
-
-    function setTab(t) {
-      tab = t;
-      $$('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === t));
-      $('#pane-paste').hidden = t !== 'paste';
-      $('#pane-ai').hidden = t !== 'ai';
-      $('#swap').closest('label').hidden = t === 'ai';
-    }
-    $$('.tab').forEach((b) => (b.onclick = () => setTab(b.dataset.tab)));
-    setTab(tab);
 
     const paste = $('#paste');
 
@@ -168,7 +122,7 @@
 
       const pv = $('#preview');
       if (error) return (pv.innerHTML = `<p class="error">Couldn't read that: ${esc(error)}</p>`);
-      if (!total) return (pv.innerHTML = `<p class="muted center pad">${tab === 'ai' ? 'Generated cards will appear here for you to check.' : 'Your cards will appear here.'}</p>`);
+      if (!total) return (pv.innerHTML = `<p class="muted center pad">Your cards will appear here.</p>`);
       const shown = [];
       parsed.decks.forEach((d, di) => {
         if (multi) shown.push(`<div class="preview-deck">${esc(d.name)} · ${plural(d.cards.length, 'card')}</div>`);
@@ -178,19 +132,11 @@
           shown.push(`<div class="preview-row">
             <div class="rich">${c.front ? Rich.render(cloze ? Rich.clozeDisplay(c.front) : c.front) : '<i class="muted">(empty)</i>'}${cloze ? ' <span class="badge b-cloze">cloze</span>' : ''}</div>
             <div class="rich">${c.back ? Rich.render(c.back) : cloze ? '' : '<i class="muted">(empty)</i>'}${tags.length ? `<div class="card-tags">${tags.map((t) => '#' + esc(t)).join(' ')}</div>` : ''}</div>
-            ${tab === 'ai' ? `<button class="icon-btn" data-rm="${di}:${ci}" title="Remove this card">✕</button>` : ''}
           </div>`);
         });
       });
       if (!multi && total > 200) shown.push(`<p class="muted small center">…and ${total - 200} more</p>`);
       pv.innerHTML = shown.join('');
-      $$('[data-rm]').forEach((b) => {
-        b.onclick = () => {
-          const [di, ci] = b.dataset.rm.split(':').map(Number);
-          parsed.decks[di].cards.splice(ci, 1);
-          drawPreview();
-        };
-      });
       Images.hydrate(pv);
     }
 
@@ -242,70 +188,6 @@
       };
     };
     dropzone($('#drop'), readFile);
-
-    // ----- AI -----
-
-    function readAiFile(file) {
-      if (!file) return;
-      if (file.size > 30 * 1024 * 1024) return toast('That file is over 30 MB');
-      const reader = new FileReader();
-      const isText = /^text\//.test(file.type) || /\.(md|txt)$/i.test(file.name);
-      reader.onload = () => {
-        aiFile = isText ? { name: file.name, type: 'text/plain', text: String(reader.result) } : { name: file.name, type: file.type, data: String(reader.result).split(',')[1] };
-        $('#ai-fname').innerHTML = `📎 ${esc(file.name)} <button class="link" id="ai-clear">remove</button>`;
-        $('#ai-clear').onclick = () => {
-          aiFile = null;
-          $('#ai-fname').textContent = '';
-        };
-      };
-      if (isText) reader.readAsText(file);
-      else reader.readAsDataURL(file);
-    }
-    $('#ai-browse').onclick = () => $('#ai-file').click();
-    $('#ai-file').onchange = (e) => readAiFile(e.target.files[0]);
-    dropzone($('#ai-drop'), readAiFile);
-
-    $('#ai-go').onclick = async () => {
-      if (aiBusy) return;
-      const apiKey = $('#ai-key').value.trim();
-      const notes = $('#ai-text').value.trim();
-      if (!apiKey) return toast('Add your Anthropic API key first');
-      if (!notes && !aiFile) return toast('Paste some notes or attach a file');
-      Store.setSecret('anthropicKey', apiKey);
-      const status = $('#ai-status');
-      const btn = $('#ai-go');
-      aiBusy = true;
-      btn.disabled = true;
-      btn.textContent = 'Generating…';
-      status.className = 'small muted';
-      status.textContent = 'Reading your material…';
-      const dest = $('#dest').value;
-      const existing = dest !== 'new' && Store.getDeck(dest) ? Store.getDeck(dest).cards.map((c) => Rich.plainText(c.front)) : [];
-      try {
-        const out = await AI.generate({
-          apiKey,
-          text: notes,
-          file: aiFile,
-          count: +$('#ai-count').value,
-          style: $('#ai-style').value,
-          instructions: $('#ai-extra').value.trim(),
-          existing,
-          onProgress: (n) => (status.textContent = n ? `Writing cards… ${n} so far` : 'Thinking about your material…'),
-        });
-        parsed = { decks: [{ name: out.title || 'Generated deck', cards: out.cards }] };
-        if (!$('#deckname').value && out.title) $('#deckname').value = out.title;
-        status.className = 'small c-mastered';
-        status.textContent = `✓ ${plural(out.cards.length, 'card')} ready. Check them on the right, remove any you don't want, then import.`;
-        drawPreview();
-      } catch (e) {
-        status.className = 'small error';
-        status.textContent = e.message;
-      } finally {
-        aiBusy = false;
-        btn.disabled = false;
-        btn.textContent = '✨ Generate again';
-      }
-    };
 
     // ----- import -----
 

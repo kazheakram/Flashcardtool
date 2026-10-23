@@ -38,7 +38,7 @@
         <p class="muted small">Paste or drop an image into any field, or use the 🖼 button. Press <kbd>Tab</kbd> in the last definition to add a new card.</p>
       </details>
       <div class="row between">
-        <p class="muted small">Need lots of cards? <a href="#/import${deck ? '?deck=' + deck.id : ''}">Import</a> or <a href="#/import?tab=ai${deck ? '&deck=' + deck.id : ''}">generate with AI</a>.</p>
+        <p class="muted small">Need lots of cards? <a href="#/import${deck ? '?deck=' + deck.id : ''}">Import them instead</a>.</p>
         <button class="btn btn-sm" id="swap" title="Swap terms and definitions of basic cards">⇄ Swap all</button>
       </div>
       <div id="rows" class="edit-rows"></div>
@@ -211,7 +211,7 @@
         go('#/deck/' + d.id);
         return;
       }
-      Store.setCards(deck, Store.expandRows(clean, deck.cards));
+      deck.cards = Store.expandRows(clean, deck.cards);
       Object.assign(deck, { name, description: $('#desc').value.trim(), folder, updated: Date.now() });
       Store.save();
       dirty = false;

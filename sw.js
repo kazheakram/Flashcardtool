@@ -1,11 +1,10 @@
 /* Offline support: precache the app shell, serve same-origin files cache-first and refresh them in the background. */
-const VERSION = 'recall-v2';
+const VERSION = 'recall-v3';
 const SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './css/styles.css',
-  './js/ai.js',
   './js/app.js',
   './js/images.js',
   './js/importer.js',
@@ -13,7 +12,6 @@ const SHELL = [
   './js/share.js',
   './js/srs.js',
   './js/store.js',
-  './js/sync.js',
   './js/ui.js',
   './js/views/deck.js',
   './js/views/edit.js',
@@ -28,7 +26,6 @@ const SHELL = [
   './vendor/katex/katex.min.css',
   './vendor/katex/katex.min.js',
   './vendor/katex/mhchem.min.js',
-  './vendor/anthropic-sdk.mjs',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',

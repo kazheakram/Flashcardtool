@@ -120,7 +120,6 @@
           ${totalDue ? `<a class="btn btn-primary" href="#/review/all">Review all due (${totalDue})</a>` : ''}
           <a class="btn" href="#/deck/new/edit">+ New deck</a>
           <a class="btn" href="#/import">Import</a>
-          <a class="btn" href="#/import?tab=ai">✨ Generate</a>
         </div>
       </section>
       ${
@@ -131,7 +130,7 @@
              ${tree.decks.length ? `<div class="deck-grid">${tree.decks.map((d) => deckCard(d, now)).join('')}</div>` : ''}`
           : `<div class="empty">
               <h2>No decks yet</h2>
-              <p class="muted">Create a deck, import from Quizlet / Anki / CSV, generate cards from your notes with AI, or try a sample deck.</p>
+              <p class="muted">Create a deck, import from Quizlet / Anki / CSV, or try a sample deck.</p>
               <div class="row center">
                 <a class="btn btn-primary" href="#/deck/new/edit">Create a deck</a>
                 <a class="btn" href="#/import">Import cards</a>
