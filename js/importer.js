@@ -80,7 +80,11 @@
       const back = (cols[1] || '').trim();
       if (!front && !back) return;
       if (i === 0 && looksLikeHeader(front, back)) return;
-      cards.push({ front, back });
+      const card = { front, back };
+      // Optional third column: tags (space or comma separated), as in Anki exports.
+      const tags = (cols[2] || '').trim();
+      if (tags && cols.length === 3) card.tags = tags;
+      cards.push(card);
     });
     return cards;
   }
@@ -135,7 +139,9 @@
     const front = o.front ?? o.term ?? o.question ?? o.word ?? o.prompt;
     const back = o.back ?? o.definition ?? o.answer ?? o.meaning ?? o.response;
     if (front == null && back == null) return null;
-    return { front: String(front ?? '').trim(), back: String(back ?? '').trim() };
+    const card = { front: String(front ?? '').trim(), back: String(back ?? '').trim() };
+    if (o.tags) card.tags = o.tags;
+    return card;
   }
 
   /** Returns { decks: [{ name, description, cards: [...] }] }. Cards may carry `srs` if from a backup. */
@@ -144,20 +150,26 @@
     if (Array.isArray(data)) {
       return { decks: [{ name: 'Imported deck', cards: data.map(cardFromObject).filter(Boolean) }] };
     }
+    if (data && data.share && Array.isArray(data.c)) {
+      // Compact share-link payload: { share: 1, n, d, c: [[front, back, tags?]] }
+      return { decks: [{ name: data.n || 'Shared deck', description: data.d || '', cards: data.c.map(([front, back, tags]) => ({ front, back, tags })) }] };
+    }
     if (data && Array.isArray(data.decks)) {
       return {
         decks: data.decks.map((d) => ({
           name: d.name || 'Imported deck',
           description: d.description || '',
+          folder: d.folder || '',
           cards: (d.cards || [])
             .map((c) => {
               const card = cardFromObject(c);
-              if (card && c.srs) card.srs = c.srs;
-              if (card && c.starred) card.starred = true;
+              if (!card) return null;
+              for (const k of ['srs', 'starred', 'tags', 'noteId', 'clozeIndex']) if (c[k] != null) card[k] = c[k];
               return card;
             })
             .filter(Boolean),
         })),
+        images: data.images || null,
       };
     }
     if (data && Array.isArray(data.cards)) {

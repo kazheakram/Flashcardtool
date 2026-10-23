@@ -43,3 +43,15 @@ test('JSON backup and plain arrays', () => {
   const arr = JSON.stringify([{ term: 't', definition: 'd' }, { question: 'q', answer: 'a' }]);
   assert.deepEqual(I.parse(arr, { format: 'json' }).decks[0].cards, [{ front: 't', back: 'd' }, { front: 'q', back: 'a' }]);
 });
+
+test('optional third column becomes tags', () => {
+  const cards = I.parseDelimited('cell\tbasic unit\tbio topic1\natom\tsmallest unit', '\t', '\n');
+  assert.equal(cards[0].tags, 'bio topic1');
+  assert.equal(cards[1].tags, undefined);
+});
+
+test('share payload', () => {
+  const r = I.parseJson(JSON.stringify({ share: 1, n: 'Deck', d: '', c: [['a', 'b', 't1'], ['{{x}}', '']] }));
+  assert.equal(r.decks[0].name, 'Deck');
+  assert.deepEqual(r.decks[0].cards[0], { front: 'a', back: 'b', tags: 't1' });
+});

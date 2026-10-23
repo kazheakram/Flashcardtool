@@ -1,45 +1,69 @@
 # Recall — flashcards with spaced repetition
 
-A Quizlet / RevisionDojo-style flashcard tool that runs entirely in your browser. No accounts, no server, and no build step.
+A Quizlet / RevisionDojo-style flashcard app that runs entirely in your browser. No account or build step is needed, and it works offline once installed.
 
 ## Features
 
-- **Spaced repetition review.** An Anki-style SM-2 scheduler with learning steps (1 min → 10 min → 1 day, and so on). Each answer button shows when you'll see the card next: **Again / Hard / Good / Easy**. Forgotten cards go back through relearning, and each card's ease adapts to how well you know it. Daily new-card and review limits are configurable.
-- **Active recall.**
-  - Recall the answer before you reveal it, or turn on **Type answers** to write it from memory. Typed answers are checked with typo tolerance and keyword matching, and the app suggests a rating.
-  - Progressive **hints** show first letters, then half of each word.
-  - **Definition first** swaps the sides of the card.
-  - **Undo** reverses the last rating.
-- **Flashcards mode.** Quizlet-style flip cards with *Know* / *Still learning* sorting. You can then restudy just the cards you missed, shuffle the deck, or study only starred cards.
-- **Quiz mode.** Mixes multiple choice, written and true/false questions, and can put your weakest cards first. Missed cards can be sent straight back into your spaced-repetition queue.
+### Studying
+- **FSRS spaced repetition.** This is the modern algorithm Anki now uses. It models how stable each memory is and schedules the next review just before you'd forget it, aiming for a target recall you choose (90% by default). Classic SM-2 is still available in Settings.
+- **Exam date mode.** Give a deck a test date and reviews are capped so every card comes up before it. New cards are also paced so you see all of them in time. A **Cram** mode reviews every card, weakest first.
+- **Active recall:**
+  - Recall the answer before revealing it, or type it. Typed answers are checked with typo tolerance.
+  - Progressive hints, *definition first* mode, and undo.
+- **Mark-scheme answers.** Write a card's answer as bullet points, with optional `[[keywords]]` on each. Long typed answers are then marked point by point, IB/GCSE style. You can tap a point to correct the marking.
+- **Cloze cards.** Write `The {{nucleus}} contains {{DNA}}` and each blank becomes its own card. `{{c1::answer::hint}}` adds a hint, and blanks with the same number are tested together.
+- **Images, formatting and maths:**
+  - Paste or drop pictures into any card.
+  - `**bold**`, `*italic*`, `==highlight==` and bullet lists.
+  - LaTeX maths in `$…$` and chemistry via `$\ce{H2SO4}$`, rendered with KaTeX.
+
+### Modes
+- **Review:** spaced repetition.
+- **Flashcards:** flip cards with *Know / Still learning* sorting.
+- **Quiz:** multiple choice, written, true/false and long-answer questions, with weakest cards first. Missed cards can be sent back to review.
+- **Match:** pair terms with definitions against the clock (tap or drag), with a personal best per deck.
+
+### Progress
+- **Stats page:**
+  - a calendar heatmap of study days
+  - how many cards are due over the next 30 days
+  - recall rate over time
+  - cards by stage, with a table view of the numbers
+- **Daily goal** with a progress ring, plus a streak.
+- **Reminders:** notifications while the app is open or installed. For a reminder that always arrives, there's a one-click recurring calendar event (`.ics`).
+
+### Organising and getting cards in
+- **Folders and tags.** Folders nest (`Biology/Topic 2/2.3`), and you can review a whole folder or one tag across decks.
 - **Import:**
-  - Paste text from a **Quizlet export** (tab / new line). You can also use comma, dash, colon or custom separators, with a live preview.
-  - Drop a **CSV / TSV** file. Quoted fields and multi-line cards are supported.
-  - Drop an **Anki "Notes in Plain Text"** export.
-  - Restore a **JSON** backup from this app, or a JSON array of `{term, definition}` / `{front, back}` / `{question, answer}`.
-  - Import into a new deck or an existing one. Duplicates are skipped.
-- **Export** a deck as JSON (including your progress) or as tab-separated text for Quizlet or Anki. You can also back up all decks at once.
-- Day streak, due counts, mastery bars (new / learning / reviewing / mastered), starred cards, search, dark mode, keyboard shortcuts and a mobile layout.
+  - Quizlet export text, CSV/TSV (an optional third column becomes tags), Anki plain-text exports (cloze notes kept), or a JSON backup (images and progress kept).
+  - Custom separators, with a live preview.
+- **AI generation.** Paste notes or attach a PDF or image, and Claude writes cards (Q&A, cloze or exam-style with mark schemes). You review and remove cards before importing. It uses your own Anthropic API key, which is stored only in your browser.
+
+### Sharing and syncing
+- **Share links.** A whole deck is compressed into the URL, so no server is needed. The person who opens it gets a copy, without your progress.
+- **Cloud sync through a private GitHub Gist.** Paste a GitHub token with only the `gist` permission on each device. Newer edits win and deletions carry across.
+- **Installable app (PWA)** that works offline.
 
 ## Run it
 
-Open `index.html` in a browser, or serve the folder:
+Serve the folder with any static web server. The installable app, offline mode and AI need `http(s)://`, not `file://`.
 
 ```sh
 npm start        # python3 -m http.server 8080 → http://localhost:8080
 ```
 
-To host it for free, enable **GitHub Pages** for this repo (Settings → Pages → deploy from branch, root folder).
+To host it for free, enable **GitHub Pages** (Settings → Pages → deploy from branch, root folder).
 
-Your data is stored in your browser's `localStorage`. Use **Settings → Export all decks** to back it up or move it to another device.
+Your data lives in the browser: decks in `localStorage`, images in IndexedDB. Use cloud sync or **Settings → Export all decks** to keep a copy.
 
 ## Keyboard shortcuts
 
 | Mode | Keys |
 | --- | --- |
-| Review | `Space` reveal · `1`–`4` Again/Hard/Good/Easy · `H` hint · `U` undo · `Esc` exit |
+| Review | `Space` reveal · `1`–`4` Again/Hard/Good/Easy · `H` hint · `U` undo · `Esc` exit · long answers: `Ctrl+Enter` to check |
 | Flashcards | `Space` flip · `1` still learning · `2` know · `←` / `→` |
-| Quiz | `1`–`4` choose option · `T` / `F` · `Enter` continue |
+| Quiz | `1`–`4` choose · `T` / `F` · `Enter` continue |
+| Match | `Enter` start / play again |
 
 ## Tests
 
@@ -50,11 +74,18 @@ npm test
 ## Project layout
 
 ```
-index.html         app shell
-css/styles.css     styles (light/dark)
-js/srs.js          spaced-repetition scheduler
-js/importer.js     Quizlet / CSV / Anki / JSON parsers
-js/store.js        localStorage persistence and stats
-js/app.js          views and routing
-tests/             node:test unit tests
+index.html, sw.js, manifest.webmanifest   app shell, offline cache, install metadata
+css/styles.css                            styles (light/dark)
+js/srs.js        FSRS + SM-2 schedulers, exam-date capping
+js/rich.js       formatting, maths, images, cloze, mark-scheme parsing
+js/importer.js   Quizlet / CSV / Anki / JSON parsers
+js/store.js      persistence, cloze expansion, folders/tags, sync merge
+js/images.js     image storage (IndexedDB)
+js/ui.js         shared helpers, answer checking
+js/share.js      share links      js/sync.js   Gist sync      js/ai.js   Claude card generation
+js/views/*.js    one file per screen
+vendor/          KaTeX and the Anthropic SDK (see vendor/README.md)
+tests/           node:test unit tests
 ```
+
+When you change any app file, bump `VERSION` in `sw.js` so installed copies pick up the update.
